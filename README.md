@@ -1,0 +1,2 @@
+# lol_agent
+一个英雄联盟专业智能问答助手，简单实现基于LangChain的agent项目
