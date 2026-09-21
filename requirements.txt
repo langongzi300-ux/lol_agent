@@ -1,0 +1,35 @@
+# ==============================================
+# LangChain ReAct Agent 
+# 安装：pip install -r requirements.txt
+# ==============================================
+
+# LangChain 核心
+langchain==0.3.7
+langchain-core==0.3.18
+langchain-community==0.3.7
+
+# 向量数据库
+langchain-chroma==0.1.4
+chromadb==0.5.15
+# chromadb 0.5.15 与新版本 posthog 接口不兼容，会产生遥测上报警告，限制为 2.x
+posthog<3
+langchain-text-splitters==0.3.2
+
+# Agent 编排
+langgraph==0.2.50
+
+# 前端
+streamlit==1.40.1
+
+# pydantic 版本兼容性：langchain 0.3.x 与 pydantic 2.11+ 不兼容，需限制在 2.10.x
+pydantic<2.11
+
+# 文档处理
+pypdf==5.1.0
+pyyaml==6.0.2
+
+# 阿里云百炼模型
+dashscope==1.20.14
+
+# 自动加载 .env 环境变量
+python-dotenv>=1.0.0
