@@ -1,5 +1,5 @@
 from langgraph.prebuilt import create_react_agent
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
 from model.factory import chat_model
 from utils.prompt_loader import load_system_prompts
@@ -21,8 +21,22 @@ class ReactAgent:
             state_modifier=load_system_prompts(),
         )
 
-    def execute_stream(self, query: str):
-        input_messages = {"messages": [HumanMessage(content=query)]}
+    def execute_stream(self, query: str, summary: str = "", history: list | None = None):
+        messages = []
+
+        # 长期摘要：老对话压缩成一条消息放在最前
+        if summary:
+            messages.append(HumanMessage(content=f"【此前对话摘要】\n{summary}"))
+
+        # 最近N轮原文：按角色还原成消息对象
+        for turn in (history or []):
+            if turn["role"] == "user":
+                messages.append(HumanMessage(content=turn["content"]))
+            elif turn["role"] == "assistant":
+                messages.append(AIMessage(content=turn["content"]))
+
+        messages.append(HumanMessage(content=query))
+        input_messages = {"messages": messages}
 
         # stream_mode="values" 返回每次状态更新后的完整消息列表
         for chunk in self.agent.stream(input_messages, stream_mode="values"):
