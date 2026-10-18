@@ -1,5 +1,5 @@
 # ==============================================
-# LangChain ReAct Agent 
+# LangChain ReAct Agent · 智能客服
 # 安装：pip install -r requirements.txt
 # ==============================================
 
@@ -11,8 +11,6 @@ langchain-community==0.3.7
 # 向量数据库
 langchain-chroma==0.1.4
 chromadb==0.5.15
-# chromadb 0.5.15 与新版本 posthog 接口不兼容，会产生遥测上报警告，限制为 2.x
-posthog<3
 langchain-text-splitters==0.3.2
 
 # Agent 编排
