@@ -13,6 +13,27 @@ from utils.file_handler import pdf_loader, txt_loader, listdir_with_allowed_type
 from utils.logger_handler import logger
 
 import os
+import re
+
+
+# 英雄条目边界："(编号)\n中文名："
+HERO_ENTRY_PATTERN = re.compile(r"\(\d+\)\s*\n中文名：")
+
+
+def _split_by_hero_entry(text: str) -> list[str]:
+    """按英雄条目边界切分文本，返回每个英雄完整条目的字符串列表"""
+    matches = list(HERO_ENTRY_PATTERN.finditer(text))
+
+    if not matches:
+        # 不符合英雄数据结构，整体作为一个分片处理
+        return [text.strip()]
+
+    entries: list[str] = []
+    for i, match in enumerate(matches):
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        entries.append(text[match.start():end].strip())
+
+    return entries
 
 
 class VectorStoreService:
@@ -35,6 +56,25 @@ class VectorStoreService:
             separators=chroma_conf["separators"],
             length_function=len,
         )
+
+    def _split_documents(self, documents: list[Document]) -> list[Document]:
+        """
+        优先按英雄条目结构切分：以 (编号)\n中文名： 为界，保证每个英雄的
+        完整信息（技能组/传记等）落在同一个分片内；
+        超长条目（>1000字）或不符合结构的文本，退回固定字数切分
+        """
+        split_result: list[Document] = []
+
+        for doc in documents:
+            for entry in _split_by_hero_entry(doc.page_content):
+                if len(entry) <= 1000:
+                    split_result.append(Document(page_content=entry, metadata=doc.metadata))
+                else:
+                    split_result.extend(
+                        self.spliter.split_documents([Document(page_content=entry, metadata=doc.metadata)])
+                    )
+
+        return split_result
 
     def get_retriever(self):
         return self.vector_store.as_retriever(search_kwargs={"k": chroma_conf["k"]})
@@ -93,7 +133,7 @@ class VectorStoreService:
                     logger.warning(f"[加载知识库]{path}内没有有效文本内容，跳过")
                     continue
 
-                split_document: list[Document] = self.spliter.split_documents(documents)
+                split_document: list[Document] = self._split_documents(documents)
 
                 if not split_document:
                     logger.warning(f"[加载知识库]{path}分片后没有有效文本内容，跳过")
